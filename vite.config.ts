@@ -3,12 +3,9 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig(() => {
   return{
-
-    base: "/lh/",
-
+    base: "/wechat-magic",
     plugins: [
       vue(),
     ],
-
   }
 })

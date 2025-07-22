@@ -4,21 +4,22 @@ import {onMounted, ref} from "vue";
 
 const route = useRoute();
 
-const profileImage = ref('./lh/profile.jpg');
+const profileImage = ref('./profile.jpg');
 const userName = ref('林北北');
 const location = ref('四川 达州');
 const signature = ref("从前车马很慢，书信很远，一生只够爱一个人")
 const imageUrl = route.query.imageUrl as string
 const showImageValue = ref(false)
-const showImage = () => {
-  showImageValue.value = !showImageValue.value
-}
 const imageRef = ref<HTMLImageElement>()
+
+const showImage = () => {
+  imageRef.value!.style.scale = "0.2"
+  showImageValue.value = true
+}
 let isDragging = false;
 let offsetX: number;
 let offsetY: number;
 onMounted(() => {
-  const parentRect = imageRef.value!.parentElement!.getBoundingClientRect();
   const end = () => {
     isDragging = false
     document.body.style.userSelect = ""
@@ -31,12 +32,13 @@ onMounted(() => {
     offsetY = touch.clientY - imageRef.value!.offsetTop
     document.body.style.userSelect = "none"
   })
+  // const innerWidth = window.innerWidth
   document.addEventListener("touchmove", (e) => {
     if (isDragging) {
+      e.preventDefault()
       const touch = e.touches[0]
       let x = touch.clientX - offsetX
       let y = touch.clientY - offsetY
-      x = Math.max(0, Math.min(x, parentRect.width - imageRef.value!.offsetWidth));
 
       const sizeOfBody = document.body.offsetHeight - y
       if (sizeOfBody<200){
@@ -46,12 +48,23 @@ onMounted(() => {
         imageRef.value!.style.top = `20%`
         return
       }
+      // const domRect = imageRef.value!.getBoundingClientRect();
+      // const maxLeft = innerWidth - domRect.width
+      // if (domRect.left > maxLeft) {
+      //   x = maxLeft
+      // }
+
       imageRef.value!.style.left = `${x}px`
       imageRef.value!.style.top = `${y}px`
     }
   })
   document.addEventListener("touchend", end)
 })
+const onImageClick = () => {
+  const scale = Number(imageRef.value!.style.scale)
+  if (scale>=1)return;
+  imageRef.value!.style.scale = `${scale +0.2}`
+}
 </script>
 
 <template>
@@ -72,7 +85,7 @@ onMounted(() => {
         </div>
         <div style="display: flex;align-items: center;padding: 15px 0">
           <div style="font-size: .9rem;width: 8ch;">签名</div>
-          <div style="color: #bcbcbc;font-size: .8rem;flex: 1;cursor: pointer" @dblclick="showImage">{{signature}}</div>
+          <div style="color: #bcbcbc;font-size: .8rem;flex: 1;cursor: pointer" >{{signature}}</div>
         </div>
         <div style="display: flex;align-items: center;padding: 15px 0">
           <div style="font-size: .9rem;width: 8ch;">来源</div>
@@ -82,11 +95,11 @@ onMounted(() => {
     </div>
 
     <div style="background-color: white; margin-top: 10px; text-align: center;padding: 12px 0;">
-      <div style="font-size: 1rem;font-weight: bold;color: #596793">添加到通讯录</div>
+      <div style="font-size: 1rem;font-weight: bold;color: #596793" @click="showImage">添加到通讯录</div>
     </div>
   </div>
 
-  <img ref="imageRef" :src="imageUrl" alt="" v-show="showImageValue" style="width: 40%;position: absolute;top: 20%;left: 50%;transform: translateX(-50%) ">
+  <img ref="imageRef" :src="imageUrl" alt="" v-show="showImageValue" @click="onImageClick" style="width: 80%;position: absolute;top: 20%;left: 50%;transform: translateX(-50%);transition: scale 0.5s;">
 
 </template>
 

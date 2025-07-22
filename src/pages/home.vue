@@ -37,14 +37,18 @@
 
 <script setup lang="ts">
 import {onMounted, ref} from 'vue';
-import type {UploadInstance, UploadRequestOptions} from "element-plus";
+import {ElLoading, type UploadInstance, type UploadRequestOptions} from "element-plus";
 import {ElUpload, ElButton} from "element-plus";
 import QRCodeStyling from "qr-code-styling";
 import axios from "axios";
 import {useRouter} from "vue-router";
+import Compressor from 'compressorjs';
+import 'element-plus/es/components/loading/style/css'
+
 
 const router = useRouter();
-const profileImage = ref('./lh/profile.jpg');
+const perString = ""
+const profileImage = ref(`./${perString}profile.jpg`);
 const userName = ref('林北北');
 const location = ref('四川 达州');
 const uploadRef = ref<UploadInstance>()
@@ -58,21 +62,38 @@ let qrCodeStyling: QRCodeStyling;
  * */
 const uploadImageUrl = "https://tmpfiles.org"
 const uploadImage = async (option: UploadRequestOptions) => {
-  const formData = new FormData();
-  formData.append("file",option.file)
-  const data = await axios.post(uploadImageUrl + "/api/v1/upload", formData);
-  const webSiteUrl = data.data.data.url as string
-  const imageUrl = webSiteUrl.replace(uploadImageUrl.replace("https","http"), uploadImageUrl + "/dl")
-  const path = router.resolve({
-    name: "info",
-    query: {
-      imageUrl
-    }
-  }).fullPath.replace('/','');
-  qrCodeStyling.update({
-    data: window.location.href + path,
+  const loadingInstance = ElLoading.service({
+    fullscreen: true,
+    lock: true,
   })
-  uploadRef.value?.clearFiles()
+
+  new Compressor(option.file,{
+    quality: 0.05,
+    async success(file) {
+      const formData = new FormData();
+      const newFile = new File([file],option.file.name,{
+        type: option.file.type,
+      })
+      formData.append("file", newFile)
+      const data = await axios.post(uploadImageUrl + "/api/v1/upload", formData, {
+        timeout: 50000
+      });
+      const webSiteUrl = data.data.data.url as string
+      const imageUrl = webSiteUrl.replace(uploadImageUrl.replace("https","http"), uploadImageUrl + "/dl")
+      const path = router.resolve({
+        name: "info",
+        query: {
+          imageUrl
+        }
+      }).fullPath.replace('/','');
+      const url = window.location.href + path
+      qrCodeStyling.update({
+        data: url,
+      })
+      uploadRef.value?.clearFiles()
+      loadingInstance.close()
+    },
+  })
 }
 
 onMounted(() => {
@@ -82,7 +103,7 @@ onMounted(() => {
     height: size,
     type: "svg",
     data: "哈哈",
-    image: "./lh/wechatLogo.png",
+    image: `./${perString}wechatLogo.png`,
     dotsOptions: {
       type: "rounded",
     },
